@@ -142,6 +142,31 @@ calcite-slider {
   --calcite-slider-handle-size: 14px;
 }
 
+/* Quote Banner - bottom right */
+#quote-banner {
+  position: fixed;
+  bottom: 30px;
+  right: 8px;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  backdrop-filter: blur(4px);
+}
+
+#quote-banner .quote-text {
+  text-align: left;
+  font-style: italic;
+}
+
+#quote-banner .quote-author {
+  text-align: right;
+  font-style: normal;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 600px) {
   #animation-panel {
@@ -149,5 +174,9 @@ calcite-slider {
     left: 10px;
     right: 10px;
     transform: none;
+  }
+
+  #quote-banner {
+    display: none;
   }
 }
