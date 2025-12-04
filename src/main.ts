@@ -580,22 +580,6 @@ async function onSceneViewReady(view: SceneView): Promise<void> {
   // Setup opacity sliders
   setupOpacitySliders();
 
-  // Configure environment
-  view.environment = {
-    background: {
-      type: "color",
-      color: [26, 26, 46, 1],
-    },
-    starsEnabled: false,
-    atmosphereEnabled: true,
-    lighting: {
-      type: "sun",
-      date: new Date("2024-06-21T10:00:00"),
-      directShadowsEnabled: true,
-    },
-  };
-  view.qualityProfile = "high";
-
   // Set view in simulation manager
   manager.setView(view);
 
