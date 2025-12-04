@@ -13,6 +13,11 @@ import "@arcgis/map-components/dist/components/arcgis-scene";
 // ArcGIS Core
 import "@arcgis/core/assets/esri/themes/light/main.css";
 import type SceneView from "@arcgis/core/views/SceneView";
+import Graphic from "@arcgis/core/Graphic";
+import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
+import Polygon from "@arcgis/core/geometry/Polygon";
+import { geodesicArea } from "@arcgis/core/geometry/geometryEngine";
+import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol";
 
 // Type for the arcgis-scene element
 interface ArcgisSceneElement extends HTMLElement {
@@ -44,9 +49,14 @@ let loadingOverlay: HTMLElement | null;
 let avalancheList: HTMLCalciteListElement | null;
 let avalancheNameEl: HTMLElement | null;
 let avalancheDescEl: HTMLElement | null;
+let releaseDepthEl: HTMLElement | null;
+let releaseAreaEl: HTMLElement | null;
+let demSourceEl: HTMLElement | null;
+let demResolutionEl: HTMLElement | null;
 
 // Application state
 const manager = getSimulationManager();
+let releaseZoneLayer: GraphicsLayer | null = null;
 
 /**
  * Update status display
@@ -216,6 +226,51 @@ function updateSliderForConfig(config: AvalancheConfig): void {
 }
 
 /**
+ * Calculate area of a GeoJSON polygon using geodesic calculation
+ */
+function calculatePolygonArea(geoJsonPolygon: { type: string; coordinates: number[][][] }): number {
+  const polygon = new Polygon({
+    rings: geoJsonPolygon.coordinates,
+    spatialReference: { wkid: 4326 }
+  });
+
+  // Returns area in square meters (negative for geodesic, take absolute)
+  return Math.abs(geodesicArea(polygon, "square-meters"));
+}
+
+/**
+ * Draw release zone polygon on the map
+ */
+function drawReleaseZone(config: AvalancheConfig): void {
+  if (!releaseZoneLayer) return;
+
+  // Clear existing graphics
+  releaseZoneLayer.removeAll();
+
+  if (!config.releaseArea) return;
+
+  const polygon = new Polygon({
+    rings: config.releaseArea.coordinates,
+    spatialReference: { wkid: 4326 }
+  });
+
+  const symbol = new SimpleFillSymbol({
+    color: [255, 0, 0, 0.3],
+    outline: {
+      color: [255, 0, 0, 1],
+      width: 2
+    }
+  });
+
+  const graphic = new Graphic({
+    geometry: polygon,
+    symbol: symbol
+  });
+
+  releaseZoneLayer.add(graphic);
+}
+
+/**
  * Update info panel with avalanche details
  */
 function updateInfoPanel(config: AvalancheConfig): void {
@@ -225,6 +280,34 @@ function updateInfoPanel(config: AvalancheConfig): void {
   if (avalancheDescEl) {
     avalancheDescEl.textContent = config.description || "Flow Height Visualization";
   }
+
+  // Release zone info
+  if (releaseDepthEl) {
+    releaseDepthEl.textContent = config.releaseDepth
+      ? `${config.releaseDepth} m`
+      : "-";
+  }
+  if (releaseAreaEl) {
+    if (config.releaseArea) {
+      const area = calculatePolygonArea(config.releaseArea);
+      releaseAreaEl.textContent = `${area.toFixed(0)} m²`;
+    } else {
+      releaseAreaEl.textContent = "-";
+    }
+  }
+
+  // DEM info
+  if (demSourceEl) {
+    demSourceEl.textContent = config.demSource || "-";
+  }
+  if (demResolutionEl) {
+    demResolutionEl.textContent = config.demGridResolution
+      ? `${config.demGridResolution} m`
+      : "-";
+  }
+
+  // Draw the release zone on the map
+  drawReleaseZone(config);
 }
 
 /**
@@ -238,7 +321,6 @@ function populateAvalancheList(configs: AvalancheConfig[]): void {
   // Add "All Avalanches" option first
   const allItem = document.createElement("calcite-list-item");
   allItem.label = "All Avalanches";
-  allItem.description = "Play all simulations simultaneously";
   allItem.value = "all";
   avalancheList.appendChild(allItem);
 
@@ -246,7 +328,6 @@ function populateAvalancheList(configs: AvalancheConfig[]): void {
   configs.forEach((config) => {
     const item = document.createElement("calcite-list-item");
     item.label = config.name;
-    item.description = config.description || "";
     item.value = config.id;
     avalancheList!.appendChild(item);
   });
@@ -274,6 +355,11 @@ async function handlePlayAll(): Promise<void> {
   updateStatus("Loading all avalanches...");
   showLoadingProgress();
 
+  // Clear release zone when playing all
+  if (releaseZoneLayer) {
+    releaseZoneLayer.removeAll();
+  }
+
   try {
     await manager.loadAllSimulations((loaded, total) => {
       updateProgress(loaded, total);
@@ -281,16 +367,26 @@ async function handlePlayAll(): Promise<void> {
 
     hideLoading();
     updateStatus("Playing all avalanches", "ready");
-    updateInfoPanel({
-      id: "all",
-      name: "All Avalanches",
-      description: "Playing all simulations simultaneously",
-      folder: "",
-      prefix: "",
-      suffix: "",
-      timeInterval: 1,
-      timeRange: [0, 0],
-    });
+
+    // Update info panel for "all" mode
+    if (avalancheNameEl) {
+      avalancheNameEl.textContent = "All Avalanches";
+    }
+    if (avalancheDescEl) {
+      avalancheDescEl.textContent = "Playing all simulations simultaneously";
+    }
+    if (releaseDepthEl) {
+      releaseDepthEl.textContent = "-";
+    }
+    if (releaseAreaEl) {
+      releaseAreaEl.textContent = "-";
+    }
+    if (demSourceEl) {
+      demSourceEl.textContent = "-";
+    }
+    if (demResolutionEl) {
+      demResolutionEl.textContent = "-";
+    }
 
     await manager.playAll();
   } catch (error) {
@@ -344,10 +440,18 @@ async function onSceneViewReady(view: SceneView): Promise<void> {
   const snowCoverLayer = createSnowCoverLayer();
   const slopeLayer = createSlopesLayer();
 
+  // Create release zone layer
+  releaseZoneLayer = new GraphicsLayer({
+    title: "Release Zone",
+    elevationInfo: {
+      mode: "on-the-ground"
+    }
+  });
+
   // Add elevation layer to ground and layers to map
   if (view.map) {
     view.map.ground.layers.add(elevationService.getLayer());
-    view.map.addMany([snowCoverLayer, slopeLayer]);
+    view.map.addMany([snowCoverLayer, slopeLayer, releaseZoneLayer]);
   }
 
   // Configure environment
@@ -417,6 +521,10 @@ function init(): void {
   avalancheList = document.getElementById("avalanche-list") as HTMLCalciteListElement;
   avalancheNameEl = document.getElementById("avalanche-name");
   avalancheDescEl = document.getElementById("avalanche-description");
+  releaseDepthEl = document.getElementById("release-depth");
+  releaseAreaEl = document.getElementById("release-area");
+  demSourceEl = document.getElementById("dem-source");
+  demResolutionEl = document.getElementById("dem-resolution");
 
   // Setup controls
   setupControls();

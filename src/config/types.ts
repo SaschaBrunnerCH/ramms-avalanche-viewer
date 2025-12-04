@@ -24,6 +24,14 @@ export interface TerrainConfig {
 }
 
 /**
+ * GeoJSON Polygon geometry for release area
+ */
+export interface GeoJSONPolygon {
+  type: 'Polygon';
+  coordinates: number[][][];
+}
+
+/**
  * Avalanche simulation configuration from JSON
  */
 export interface AvalancheConfig {
@@ -35,6 +43,10 @@ export interface AvalancheConfig {
   timeInterval: number;
   timeRange: [number, number];
   description?: string;
+  demSource?: string;
+  demGridResolution?: number;
+  releaseArea?: GeoJSONPolygon;
+  releaseDepth?: number;
 }
 
 /**

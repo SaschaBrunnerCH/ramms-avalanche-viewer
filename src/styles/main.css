@@ -137,6 +137,19 @@ arcgis-scene {
   font-size: 1rem;
 }
 
+/* Info grid for simulation details */
+.info-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 0.85rem;
+}
+
+.info-grid .info-label {
+  color: var(--calcite-color-text-3);
+  font-weight: 500;
+}
+
 /* Calcite overrides for compact look */
 calcite-slider {
   --calcite-slider-handle-size: 14px;
