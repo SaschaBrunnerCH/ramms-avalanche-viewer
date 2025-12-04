@@ -7,10 +7,17 @@ import "@esri/calcite-components/dist/calcite/calcite.css";
 setAssetPath("https://js.arcgis.com/calcite-components/3.0.3/assets");
 defineCustomElements(window);
 
+// ArcGIS Map Components
+import "@arcgis/map-components/dist/components/arcgis-scene";
+
 // ArcGIS Core
 import "@arcgis/core/assets/esri/themes/light/main.css";
-import Map from "@arcgis/core/Map";
-import SceneView from "@arcgis/core/views/SceneView";
+import type SceneView from "@arcgis/core/views/SceneView";
+
+// Type for the arcgis-scene element
+interface ArcgisSceneElement extends HTMLElement {
+  view: SceneView | null;
+}
 
 // App modules
 import { getSimulationManager } from "./core/SimulationManager";
@@ -341,32 +348,9 @@ async function switchToAvalanche(id: string): Promise<void> {
 }
 
 /**
- * Initialize the application
+ * Handle scene view ready event
  */
-async function init(): Promise<void> {
-  updateStatus("Initializing...");
-
-  // Get UI elements
-  playBtn = document.getElementById("play-btn") as HTMLCalciteButtonElement;
-  resetBtn = document.getElementById("reset-btn") as HTMLCalciteButtonElement;
-  timeSlider = document.getElementById("time-slider") as HTMLCalciteSliderElement;
-  speedSelect = document.getElementById("speed-select") as HTMLCalciteSelectElement;
-  smoothingSelect = document.getElementById("smoothing-select") as HTMLCalciteSelectElement;
-  flattenSelect = document.getElementById("flatten-select") as HTMLCalciteSelectElement;
-  currentTimeSpan = document.getElementById("current-time");
-  statusEl = document.getElementById("status");
-  progressBar = document.getElementById("progress-bar") as HTMLCalciteProgressElement;
-  progressText = document.getElementById("progress-text");
-  loadingProgress = document.getElementById("loading-progress");
-  loadingOverlay = document.getElementById("loading-overlay");
-  avalancheList = document.getElementById("avalanche-list") as HTMLCalciteListElement;
-  avalancheNameEl = document.getElementById("avalanche-name");
-  avalancheDescEl = document.getElementById("avalanche-description");
-  playAllBtn = document.getElementById("play-all-btn") as HTMLCalciteActionElement;
-
-  // Setup controls
-  setupControls();
-
+async function onSceneViewReady(view: SceneView): Promise<void> {
   // Load elevation service
   const elevationService = getElevationService();
   await elevationService.load();
@@ -375,38 +359,27 @@ async function init(): Promise<void> {
   const snowCoverLayer = createSnowCoverLayer();
   const slopeLayer = createSlopesLayer();
 
-  // Create map
-  const map = new Map({
-    basemap: "satellite",
-    ground: {
-      layers: [elevationService.getLayer()],
-      surfaceColor: "#2d3436",
-    },
-    layers: [snowCoverLayer, slopeLayer],
-  });
+  // Add elevation layer to ground and layers to map
+  if (view.map) {
+    view.map.ground.layers.add(elevationService.getLayer());
+    view.map.addMany([snowCoverLayer, slopeLayer]);
+  }
 
-  // Create SceneView
-  const view = new SceneView({
-    container: "viewDiv",
-    map: map,
-    environment: {
-      background: {
-        type: "color",
-        color: [26, 26, 46, 1],
-      },
-      starsEnabled: false,
-      atmosphereEnabled: true,
-      lighting: {
-        type: "sun",
-        date: new Date("2024-06-21T10:00:00"),
-        directShadowsEnabled: true,
-      },
+  // Configure environment
+  view.environment = {
+    background: {
+      type: "color",
+      color: [26, 26, 46, 1],
     },
-    qualityProfile: "high",
-    viewingMode: "local",
-  });
-
-  await view.when();
+    starsEnabled: false,
+    atmosphereEnabled: true,
+    lighting: {
+      type: "sun",
+      date: new Date("2024-06-21T10:00:00"),
+      directShadowsEnabled: true,
+    },
+  };
+  view.qualityProfile = "high";
 
   // Set view in simulation manager
   manager.setView(view);
@@ -437,8 +410,52 @@ async function init(): Promise<void> {
   }
 }
 
+/**
+ * Initialize the application
+ */
+function init(): void {
+  updateStatus("Initializing...");
+
+  // Get UI elements
+  playBtn = document.getElementById("play-btn") as HTMLCalciteButtonElement;
+  resetBtn = document.getElementById("reset-btn") as HTMLCalciteButtonElement;
+  timeSlider = document.getElementById("time-slider") as HTMLCalciteSliderElement;
+  speedSelect = document.getElementById("speed-select") as HTMLCalciteSelectElement;
+  smoothingSelect = document.getElementById("smoothing-select") as HTMLCalciteSelectElement;
+  flattenSelect = document.getElementById("flatten-select") as HTMLCalciteSelectElement;
+  currentTimeSpan = document.getElementById("current-time");
+  statusEl = document.getElementById("status");
+  progressBar = document.getElementById("progress-bar") as HTMLCalciteProgressElement;
+  progressText = document.getElementById("progress-text");
+  loadingProgress = document.getElementById("loading-progress");
+  loadingOverlay = document.getElementById("loading-overlay");
+  avalancheList = document.getElementById("avalanche-list") as HTMLCalciteListElement;
+  avalancheNameEl = document.getElementById("avalanche-name");
+  avalancheDescEl = document.getElementById("avalanche-description");
+  playAllBtn = document.getElementById("play-all-btn") as HTMLCalciteActionElement;
+
+  // Setup controls
+  setupControls();
+
+  // Get the arcgis-scene component and listen for ready event
+  const sceneElement = document.querySelector("arcgis-scene") as ArcgisSceneElement | null;
+  if (sceneElement) {
+    sceneElement.addEventListener("arcgisViewReadyChange", async (event: Event) => {
+      const view = (event.target as ArcgisSceneElement).view;
+      if (view) {
+        try {
+          await onSceneViewReady(view);
+        } catch (error) {
+          console.error("Application initialization failed:", error);
+          updateStatus(`Initialization failed: ${(error as Error).message}`, "error");
+        }
+      }
+    });
+  } else {
+    console.error("arcgis-scene element not found");
+    updateStatus("Scene element not found", "error");
+  }
+}
+
 // Start the application
-init().catch((error) => {
-  console.error("Application initialization failed:", error);
-  updateStatus(`Initialization failed: ${error.message}`, "error");
-});
+init();

@@ -72,8 +72,11 @@
         </calcite-panel>
       </calcite-shell-panel>
 
-      <!-- Main Content: Map View -->
-      <div id="viewDiv"></div>
+      <!-- Main Content: Scene View -->
+      <arcgis-scene
+        basemap="satellite"
+        ground="world-elevation"
+      ></arcgis-scene>
     </calcite-shell>
 
     <!-- Animation Controls - Outside shell, positioned absolutely -->

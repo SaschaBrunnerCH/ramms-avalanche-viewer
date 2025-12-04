@@ -22,7 +22,7 @@ calcite-shell {
   bottom: 0;
 }
 
-#viewDiv {
+arcgis-scene {
   width: 100%;
   height: 100%;
   position: absolute;
