@@ -1,4 +1,4 @@
-# RAMMS Avalanche Viewer - Implementation Plan
+# RAMMS::Avalanche Viewer - Implementation Plan
 
 ## Overview
 

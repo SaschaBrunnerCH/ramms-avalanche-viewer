@@ -1,4 +1,4 @@
-# RAMMS Avalanche Viewer
+# RAMMS::Avalanche Viewer
 
 ## Project Overview
 
