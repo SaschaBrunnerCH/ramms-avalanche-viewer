@@ -1,0 +1,29 @@
+{
+  "name": "ramms-avalanche-viewer",
+  "version": "1.0.0",
+  "description": "Web application to visualize avalanche simulations from RAMMS::AVALANCHE",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://SaschaBrunnerCH@github.com/SaschaBrunnerCH/ramms-avalanche-viewer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SaschaBrunnerCH/ramms-avalanche-viewer/issues"
+  },
+  "homepage": "https://github.com/SaschaBrunnerCH/ramms-avalanche-viewer#readme",
+  "dependencies": {
+    "@arcgis/core": "4.34",
+    "@esri/calcite-components": "^3.3.3",
+    "geotiff": "^2.1.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.6"
+  }
+}

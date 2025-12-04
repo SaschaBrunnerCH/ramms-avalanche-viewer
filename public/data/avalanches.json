@@ -1,0 +1,50 @@
+{
+  "avalanches": [
+    {
+      "id": "diepen",
+      "name": "Diepen",
+      "folder": "Diepen",
+      "prefix": "Diepen_1s_Flowheight_",
+      "suffix": "s.tif",
+      "timeInterval": 1,
+      "timeRange": [0, 46],
+      "description": "Diepen avalanche simulation"
+    },
+    {
+      "id": "hundstock",
+      "name": "Hundstock",
+      "folder": "Hundstock",
+      "prefix": "Hundstock_1s_Flowheight_",
+      "suffix": "s.tif",
+      "timeInterval": 1,
+      "timeRange": [0, 85],
+      "description": "Hundstock avalanche simulation"
+    },
+    {
+      "id": "siwfass",
+      "name": "Siwfass",
+      "folder": "Siwfass",
+      "prefix": "Siwfass_1s_Flowheight_",
+      "suffix": "s.tif",
+      "timeInterval": 1,
+      "timeRange": [0, 44],
+      "description": "Siwfass avalanche simulation"
+    },
+    {
+      "id": "spilauersee",
+      "name": "Spilauersee",
+      "folder": "Spilauersee",
+      "prefix": "spilauersee_Flowheight_",
+      "suffix": "s.tif",
+      "timeInterval": 2,
+      "timeRange": [0, 66],
+      "description": "Spilauersee avalanche simulation"
+    }
+  ],
+  "defaults": {
+    "gridResolution": 100,
+    "exaggerationFactor": 50,
+    "smoothingFactor": 2,
+    "flattenPasses": 5
+  }
+}

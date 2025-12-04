@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAMMS Avalanche Viewer</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏔️</text></svg>"
+    />
+  </head>
+  <body>
+    <calcite-shell content-behind>
+      <!-- Header -->
+      <calcite-navigation slot="header">
+        <calcite-navigation-logo
+          slot="logo"
+          heading="RAMMS Avalanche Viewer"
+          description="3D Avalanche Simulation"
+        ></calcite-navigation-logo>
+      </calcite-navigation>
+
+      <!-- Right Panel - Info & Legend -->
+      <calcite-shell-panel
+        slot="panel-end"
+        position="end"
+        display-mode="float"
+        width-scale="s"
+      >
+        <calcite-panel heading="Simulation Info" closable>
+          <calcite-block heading="Current Avalanche" expanded>
+            <calcite-icon slot="icon" icon="initiative"></calcite-icon>
+            <p id="avalanche-name">Spilauersee</p>
+            <p
+              id="avalanche-description"
+              style="font-size: 0.85rem; color: var(--calcite-color-text-3)"
+            >
+              Flow Height Visualization
+            </p>
+          </calcite-block>
+
+          <calcite-block heading="Status" expanded collapsible>
+            <calcite-icon slot="icon" icon="information"></calcite-icon>
+            <div id="status" class="status-display loading">
+              Initializing...
+            </div>
+          </calcite-block>
+        </calcite-panel>
+      </calcite-shell-panel>
+
+      <!-- Main Content: Map View -->
+      <div id="viewDiv"></div>
+    </calcite-shell>
+
+    <!-- Animation Controls - Outside shell, positioned absolutely -->
+    <div id="animation-panel">
+      <div class="control-panel">
+        <!-- Time Display -->
+        <div class="time-display">
+          Time: <span id="current-time" class="time-value">0.00</span>s
+        </div>
+
+        <!-- Time Slider -->
+        <div class="slider-container">
+          <calcite-slider
+            id="time-slider"
+            min="0"
+            max="66"
+            step="2"
+            value="0"
+            label-handles
+            snap
+          ></calcite-slider>
+        </div>
+
+        <!-- Playback Controls -->
+        <div class="control-row">
+          <calcite-button
+            id="play-btn"
+            icon-start="play-f"
+            appearance="solid"
+            kind="brand"
+            scale="s"
+          >
+            Play
+          </calcite-button>
+          <calcite-button
+            id="reset-btn"
+            icon-start="reset"
+            appearance="outline"
+            kind="neutral"
+            scale="s"
+          >
+            Reset
+          </calcite-button>
+        </div>
+
+        <!-- Settings Row -->
+        <div class="control-row">
+          <calcite-label layout="inline" scale="s">
+            Speed
+            <calcite-select id="speed-select" scale="s">
+              <calcite-option value="2000">0.5x</calcite-option>
+              <calcite-option value="1000" selected>1x</calcite-option>
+              <calcite-option value="500">2x</calcite-option>
+              <calcite-option value="250">4x</calcite-option>
+            </calcite-select>
+          </calcite-label>
+
+          <calcite-label layout="inline" scale="s">
+            Grid
+            <calcite-select id="smoothing-select" scale="s">
+              <calcite-option value="1">1x</calcite-option>
+              <calcite-option value="2" selected>2x</calcite-option>
+              <calcite-option value="3">3x</calcite-option>
+              <calcite-option value="4">4x</calcite-option>
+            </calcite-select>
+          </calcite-label>
+
+          <calcite-label layout="inline" scale="s">
+            Flatten
+            <calcite-select id="flatten-select" scale="s">
+              <calcite-option value="0">Off</calcite-option>
+              <calcite-option value="2">Low</calcite-option>
+              <calcite-option value="5" selected>Medium</calcite-option>
+              <calcite-option value="10">High</calcite-option>
+              <calcite-option value="20">Very High</calcite-option>
+            </calcite-select>
+          </calcite-label>
+        </div>
+
+        <!-- Progress -->
+        <div id="loading-progress">
+          <calcite-progress
+            id="progress-bar"
+            type="determinate"
+            value="0"
+          ></calcite-progress>
+          <p
+            id="progress-text"
+            style="text-align: center; font-size: 0.75rem; margin-top: 4px"
+          >
+            Loading frames...
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+      <calcite-loader active scale="l"></calcite-loader>
+      <p class="loading-text">Loading Avalanche Simulation...</p>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

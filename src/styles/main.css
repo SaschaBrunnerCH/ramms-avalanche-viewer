@@ -1,0 +1,153 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Avenir Next', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  overflow: hidden;
+}
+
+calcite-shell {
+  --calcite-color-brand: #007ac2;
+  --calcite-color-brand-hover: #00619b;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+#viewDiv {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Animation Panel - positioned at bottom center, above attribution */
+#animation-panel {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  min-width: 380px;
+  max-width: 450px;
+}
+
+/* Control Panel Styling */
+.control-panel {
+  padding: 8px 12px;
+}
+
+/* Time Display */
+.time-display {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 0;
+  margin-bottom: 4px;
+  color: #323232;
+}
+
+/* Slider container */
+.slider-container {
+  padding: 2px 0 4px 0;
+}
+
+/* Control Row */
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.control-row calcite-button {
+  flex: 1;
+}
+
+.control-row calcite-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.7rem;
+  color: #6a6a6a;
+}
+
+/* Status Display */
+.status-display {
+  padding: 4px;
+  border-radius: 0;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+.status-display.loading {
+  background: rgba(0, 122, 194, 0.1);
+  color: #007ac2;
+}
+
+.status-display.ready {
+  background: rgba(53, 172, 70, 0.1);
+  color: #35ac46;
+}
+
+.status-display.error {
+  background: rgba(209, 59, 59, 0.1);
+  color: #d13b3b;
+}
+
+/* Loading overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 100;
+}
+
+.loading-overlay.hidden {
+  display: none;
+}
+
+.loading-text {
+  margin-top: 16px;
+  color: #323232;
+  font-size: 1rem;
+}
+
+/* Calcite overrides for compact look */
+calcite-slider {
+  --calcite-slider-handle-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  #animation-panel {
+    min-width: auto;
+    left: 10px;
+    right: 10px;
+    transform: none;
+  }
+}
