@@ -40,6 +40,7 @@ let timeSlider: HTMLCalciteSliderElement | null;
 let speedSelect: HTMLCalciteSelectElement | null;
 let smoothingSelect: HTMLCalciteSelectElement | null;
 let flattenSelect: HTMLCalciteSelectElement | null;
+let exaggerationSelect: HTMLCalciteSelectElement | null;
 let currentTimeSpan: HTMLElement | null;
 let statusEl: HTMLElement | null;
 let progressBar: HTMLCalciteProgressElement | null;
@@ -183,6 +184,18 @@ function setupControls(): void {
         manager.setFlattenPassesAll(passes);
       } else {
         getSimulation()?.setFlattenPasses(passes);
+      }
+    });
+  }
+
+  // Exaggeration select
+  if (exaggerationSelect) {
+    exaggerationSelect.addEventListener("calciteSelectChange", () => {
+      const factor = parseInt(exaggerationSelect!.value, 10);
+      if (manager.isPlayAllMode()) {
+        manager.setExaggerationAll(factor);
+      } else {
+        getSimulation()?.setExaggeration(factor);
       }
     });
   }
@@ -506,6 +519,8 @@ async function switchToAvalanche(id: string): Promise<void> {
 function setupOpacitySliders(): void {
   // Snow Cover opacity
   if (snowCoverOpacitySlider && snowCoverLayer) {
+    // Set initial slider value from layer opacity
+    snowCoverOpacitySlider.value = snowCoverLayer.opacity * 100;
     snowCoverOpacitySlider.addEventListener("calciteSliderInput", () => {
       if (snowCoverLayer) {
         snowCoverLayer.opacity = (snowCoverOpacitySlider!.value as number) / 100;
@@ -515,6 +530,8 @@ function setupOpacitySliders(): void {
 
   // Slopes opacity
   if (slopesOpacitySlider && slopesLayer) {
+    // Set initial slider value from layer opacity
+    slopesOpacitySlider.value = slopesLayer.opacity * 100;
     slopesOpacitySlider.addEventListener("calciteSliderInput", () => {
       if (slopesLayer) {
         slopesLayer.opacity = (slopesOpacitySlider!.value as number) / 100;
@@ -524,6 +541,8 @@ function setupOpacitySliders(): void {
 
   // Release Zone opacity
   if (releaseZoneOpacitySlider && releaseZoneLayer) {
+    // Set initial slider value from layer opacity
+    releaseZoneOpacitySlider.value = releaseZoneLayer.opacity * 100;
     releaseZoneOpacitySlider.addEventListener("calciteSliderInput", () => {
       if (releaseZoneLayer) {
         releaseZoneLayer.opacity = (releaseZoneOpacitySlider!.value as number) / 100;
@@ -619,6 +638,7 @@ function init(): void {
   speedSelect = document.getElementById("speed-select") as HTMLCalciteSelectElement;
   smoothingSelect = document.getElementById("smoothing-select") as HTMLCalciteSelectElement;
   flattenSelect = document.getElementById("flatten-select") as HTMLCalciteSelectElement;
+  exaggerationSelect = document.getElementById("exaggeration-select") as HTMLCalciteSelectElement;
   currentTimeSpan = document.getElementById("current-time");
   statusEl = document.getElementById("status");
   progressBar = document.getElementById("progress-bar") as HTMLCalciteProgressElement;

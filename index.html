@@ -44,7 +44,7 @@
         width-scale="m"
       >
         <calcite-panel heading="Simulation Info" collapsible collapse-direction="top">
-          <calcite-block heading="Current Avalanche" expanded>
+          <calcite-block heading="Current Avalanche" expanded collapsible>
             <calcite-icon slot="icon" icon="initiative"></calcite-icon>
             <p id="avalanche-name">-</p>
             <p
@@ -94,6 +94,42 @@
               </p>
             </div>
           </calcite-block>
+
+          <calcite-block heading="Configuration" collapsible collapsed>
+            <calcite-icon slot="icon" icon="gear"></calcite-icon>
+            <div class="config-grid">
+              <calcite-label layout="inline" scale="s">
+                Grid
+                <calcite-select id="smoothing-select" scale="s">
+                  <calcite-option value="1">1x</calcite-option>
+                  <calcite-option value="2">2x</calcite-option>
+                  <calcite-option value="3">3x</calcite-option>
+                  <calcite-option value="4" selected>4x</calcite-option>
+                </calcite-select>
+              </calcite-label>
+
+              <calcite-label layout="inline" scale="s">
+                Flatten
+                <calcite-select id="flatten-select" scale="s">
+                  <calcite-option value="0">Off</calcite-option>
+                  <calcite-option value="2">Low</calcite-option>
+                  <calcite-option value="5">Medium</calcite-option>
+                  <calcite-option value="10">High</calcite-option>
+                  <calcite-option value="20" selected>Very High</calcite-option>
+                </calcite-select>
+              </calcite-label>
+
+              <calcite-label layout="inline" scale="s">
+                Exaggeration
+                <calcite-select id="exaggeration-select" scale="s">
+                  <calcite-option value="1">1x</calcite-option>
+                  <calcite-option value="10">10x</calcite-option>
+                  <calcite-option value="20" selected>20x</calcite-option>
+                  <calcite-option value="50">50x</calcite-option>
+                </calcite-select>
+              </calcite-label>
+            </div>
+          </calcite-block>
         </calcite-panel>
       </calcite-shell-panel>
 
@@ -101,15 +137,26 @@
       <arcgis-scene
         basemap="satellite"
         ground="world-elevation"
+        camera-position="8.68,46.92,25000"
+        camera-heading="0"
+        camera-tilt="65"
       ></arcgis-scene>
     </calcite-shell>
 
     <!-- Animation Controls - Outside shell, positioned absolutely -->
     <div id="animation-panel">
       <div class="control-panel">
-        <!-- Time Display -->
-        <div class="time-display">
-          Time: <span id="current-time" class="time-value">0.00</span>s
+        <!-- Time Display with Speed -->
+        <div class="time-row">
+          <span class="time-display">
+            Time: <span id="current-time" class="time-value">0.00</span>s
+          </span>
+          <calcite-select id="speed-select" scale="s" style="width: 70px;">
+            <calcite-option value="2000">0.5x</calcite-option>
+            <calcite-option value="1000">1x</calcite-option>
+            <calcite-option value="500">2x</calcite-option>
+            <calcite-option value="250" selected>4x</calcite-option>
+          </calcite-select>
         </div>
 
         <!-- Time Slider -->
@@ -120,65 +167,18 @@
             max="66"
             step="2"
             value="0"
-            label-handles
             snap
           ></calcite-slider>
         </div>
 
         <!-- Playback Controls -->
         <div class="control-row">
-          <calcite-button
-            id="play-btn"
-            icon-start="play-f"
-            appearance="solid"
-            kind="brand"
-            scale="s"
-          >
+          <calcite-button id="play-btn" icon-start="play-f" appearance="solid" kind="brand" scale="s">
             Play
           </calcite-button>
-          <calcite-button
-            id="reset-btn"
-            icon-start="reset"
-            appearance="outline"
-            kind="neutral"
-            scale="s"
-          >
+          <calcite-button id="reset-btn" icon-start="reset" appearance="outline" kind="neutral" scale="s">
             Reset
           </calcite-button>
-        </div>
-
-        <!-- Settings Row -->
-        <div class="control-row">
-          <calcite-label layout="inline" scale="s">
-            Speed
-            <calcite-select id="speed-select" scale="s">
-              <calcite-option value="2000">0.5x</calcite-option>
-              <calcite-option value="1000">1x</calcite-option>
-              <calcite-option value="500">2x</calcite-option>
-              <calcite-option value="250" selected>4x</calcite-option>
-            </calcite-select>
-          </calcite-label>
-
-          <calcite-label layout="inline" scale="s">
-            Grid
-            <calcite-select id="smoothing-select" scale="s">
-              <calcite-option value="1">1x</calcite-option>
-              <calcite-option value="2">2x</calcite-option>
-              <calcite-option value="3">3x</calcite-option>
-              <calcite-option value="4" selected>4x</calcite-option>
-            </calcite-select>
-          </calcite-label>
-
-          <calcite-label layout="inline" scale="s">
-            Flatten
-            <calcite-select id="flatten-select" scale="s">
-              <calcite-option value="0">Off</calcite-option>
-              <calcite-option value="2">Low</calcite-option>
-              <calcite-option value="5">Medium</calcite-option>
-              <calcite-option value="10">High</calcite-option>
-              <calcite-option value="20" selected>Very High</calcite-option>
-            </calcite-select>
-          </calcite-label>
         </div>
       </div>
     </div>

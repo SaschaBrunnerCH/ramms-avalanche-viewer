@@ -348,6 +348,15 @@ export class SimulationManager {
   }
 
   /**
+   * Set exaggeration factor for all simulations
+   */
+  setExaggerationAll(factor: number): void {
+    this.simulations.forEach((sim) => {
+      sim.setExaggeration(factor);
+    });
+  }
+
+  /**
    * Seek all simulations to a specific time
    * Simulations that don't have frames at that time stay at their last frame
    */

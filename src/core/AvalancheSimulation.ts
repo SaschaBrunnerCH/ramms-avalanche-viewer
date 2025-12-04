@@ -35,6 +35,7 @@ export class AvalancheSimulation {
   private baseGridData: GridData | null = null;
   private smoothedGridData: GridData | null = null;
   private currentFrameTime: number | null = null;
+  private exaggerationFactor: number = DEFAULT_TERRAIN_CONFIG.exaggerationFactor;
 
   // Event handlers
   private eventHandlers: Map<string, AnimationEventHandler[]> = new Map();
@@ -111,11 +112,16 @@ export class AvalancheSimulation {
       const flowData = this.frameCache.get(time);
       if (!flowData) continue;
 
+      const terrainConfig = {
+        ...DEFAULT_TERRAIN_CONFIG,
+        exaggerationFactor: this.exaggerationFactor
+      };
+
       const mesh = createMesh(
         flowData,
         this.baseGridData,
         this.smoothedGridData,
-        DEFAULT_TERRAIN_CONFIG,
+        terrainConfig,
         this.state.smoothingFactor,
         this.state.flattenPasses
       );
@@ -301,6 +307,15 @@ export class AvalancheSimulation {
    */
   setFlattenPasses(passes: number): void {
     this.state.flattenPasses = passes;
+    this.rebuildMeshCache();
+    this.displayFrame(this.state.currentFrameIndex);
+  }
+
+  /**
+   * Set exaggeration factor
+   */
+  setExaggeration(factor: number): void {
+    this.exaggerationFactor = factor;
     this.rebuildMeshCache();
     this.displayFrame(this.state.currentFrameIndex);
   }
