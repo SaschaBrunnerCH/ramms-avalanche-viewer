@@ -23,9 +23,11 @@ ramms-avalanche-viewer/
 ├── src/
 │   ├── core/
 │   │   ├── AvalancheSimulation.ts
+│   │   ├── SimulationManager.ts
 │   │   ├── TiffLoader.ts
 │   │   ├── MeshGenerator.ts
-│   │   └── ElevationService.ts
+│   │   ├── ElevationService.ts
+│   │   └── SnowCoverLayer.ts
 │   ├── config/
 │   │   ├── constants.ts
 │   │   └── types.ts
@@ -112,20 +114,25 @@ export interface AnimationState {
 
 ---
 
-## Phase 2: CI/CD [PENDING]
+## Phase 2: CI/CD [COMPLETED]
 
 ### Step 2.1: Create GitHub Actions Workflow (`.github/workflows/deploy.yml`)
 ```yaml
-name: Deploy to GitHub Pages
+name: Build&Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -134,26 +141,27 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run build
+      - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
-    needs: build
-    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
     steps:
       - uses: actions/deploy-pages@v4
         id: deployment
 ```
 
-### Step 2.2: npm scripts (already configured)
+### Step 2.2: npm scripts (configured)
 ```json
 {
   "scripts": {
@@ -166,9 +174,9 @@ jobs:
 
 ---
 
-## Phase 3: Multi-Avalanche Support [PENDING]
+## Phase 3: Multi-Avalanche Support [COMPLETED]
 
-### Step 3.1: Configuration File (`public/data/avalanches.json`) [CREATED]
+### Step 3.1: Configuration File (`public/data/avalanches.json`)
 ```json
 {
   "avalanches": [
@@ -215,26 +223,38 @@ jobs:
 ### Step 3.2: Implement SimulationManager (`src/core/SimulationManager.ts`)
 - Manage multiple `AvalancheSimulation` instances
 - Handle avalanche switching with zoom-to-extent
-- Calculate combined extent for overview
+- Singleton pattern via `getSimulationManager()`
+- Event system for avalanche changes
 
 ### Step 3.3: Implement Navigation Menu
-- Use `<calcite-list>` with `<calcite-list-item>` per avalanche
-- On selection: zoom to extent, start simulation
+- Left panel with `<calcite-shell-panel>` and `<calcite-panel>`
+- `<calcite-list>` with `<calcite-list-item>` per avalanche (dynamically populated)
+- On selection: exit Play All mode, zoom to extent, load simulation
 
-### Step 3.4: Implement Initial Overview
-- On app load: show all avalanche locations with markers
-- Use point graphics or `<calcite-chip>` overlays
-- Click marker to select avalanche
+### Step 3.4: AvalancheSimulation Updates
+- Added `hide()` method to hide all mesh graphics
+- Added `show()` method to show current frame mesh graphic
+- Used for seamless switching between simulations
 
 ---
 
-## Phase 4: Enhancements [PENDING]
+## Phase 4: Play All Feature [COMPLETED]
 
 ### Step 4.1: Implement "Play All" Feature
-- Add "Play All" button in navigation
-- `SimulationManager.playAll()` starts all simulations
-- Zoom to combined extent of all avalanches
-- Synchronize playback by wall-clock time (not frame index)
+- Added "Play All" button (`<calcite-action>`) in left panel header
+- Button toggles between "Play All" (play-all-f icon) and "Stop All" (stop-f icon)
+
+### Step 4.2: SimulationManager Methods
+- `loadAllSimulations()` - Preload all avalanche simulations with progress callback
+- `getCombinedExtent()` - Calculate union of all simulation extents
+- `playAll()` - Show all simulations, zoom to combined extent, start playback
+- `stopAll()` - Pause and hide all simulations, restore active simulation
+- `isPlayAllMode()` - Check if in Play All mode
+
+### Step 4.3: UI Integration
+- `handlePlayAll()` in main.ts handles button click
+- `updatePlayAllButton()` toggles icon and text
+- Selecting individual avalanche exits Play All mode automatically
 
 ---
 
@@ -242,17 +262,20 @@ jobs:
 
 | File | Status | Description |
 |------|--------|-------------|
-| `src/main.ts` | Created | App entry point |
-| `src/core/AvalancheSimulation.ts` | Created | Animation class with mesh caching |
-| `src/core/TiffLoader.ts` | Created | TIFF loading |
-| `src/core/MeshGenerator.ts` | Created | Mesh generation |
-| `src/core/ElevationService.ts` | Created | Elevation queries |
-| `src/config/types.ts` | Created | TypeScript interfaces |
-| `src/config/constants.ts` | Created | Color stops, terrain config |
-| `src/utils/interpolation.ts` | Created | Grid resampling, smoothing |
-| `src/utils/colorUtils.ts` | Created | Color interpolation |
-| `public/data/avalanches.json` | Created | Avalanche configuration |
-| `.github/workflows/deploy.yml` | Pending | CI/CD workflow |
+| `src/main.ts` | Complete | App entry point with Play All handling |
+| `src/core/AvalancheSimulation.ts` | Complete | Animation class with mesh caching, hide/show |
+| `src/core/SimulationManager.ts` | Complete | Multi-simulation management, Play All |
+| `src/core/TiffLoader.ts` | Complete | TIFF loading |
+| `src/core/MeshGenerator.ts` | Complete | Mesh generation |
+| `src/core/ElevationService.ts` | Complete | Elevation queries |
+| `src/core/SnowCoverLayer.ts` | Complete | Snow cover and slope raster functions |
+| `src/config/types.ts` | Complete | TypeScript interfaces |
+| `src/config/constants.ts` | Complete | Color stops, terrain config |
+| `src/utils/interpolation.ts` | Complete | Grid resampling, smoothing |
+| `src/utils/colorUtils.ts` | Complete | Color interpolation |
+| `public/data/avalanches.json` | Complete | Avalanche configuration |
+| `.github/workflows/deploy.yml` | Complete | CI/CD workflow |
+| `index.html` | Complete | UI with left panel and Play All button |
 
 ---
 
@@ -263,4 +286,5 @@ jobs:
 3. **Calcite events**: Use `calciteSliderInput`, `calciteSelectChange` (not native events)
 4. **Asset paths**: Configure `setAssetPath()` for Calcite icons via CDN
 5. **Build paths**: Conditional base path for GitHub Pages vs local development
-6. **Play All sync**: Normalize to wall-clock time since durations differ
+6. **Play All sync**: All simulations play independently at their configured speeds
+7. **Visibility management**: Use `hide()`/`show()` methods for seamless transitions

@@ -11,35 +11,20 @@ defineCustomElements(window);
 import "@arcgis/core/assets/esri/themes/light/main.css";
 import Map from "@arcgis/core/Map";
 import SceneView from "@arcgis/core/views/SceneView";
-import Extent from "@arcgis/core/geometry/Extent";
-import Camera from "@arcgis/core/Camera";
-import Point from "@arcgis/core/geometry/Point";
 
 // App modules
-import { AvalancheSimulation } from "./core/AvalancheSimulation";
+import { getSimulationManager } from "./core/SimulationManager";
 import { getElevationService } from "./core/ElevationService";
 import { createSnowCoverLayer, createSlopesLayer } from "./core/SnowCoverLayer";
 import type { AvalancheConfig } from "./config/types";
-import { CAMERA_ANIMATION_DURATION } from "./config/constants";
 
 // Styles
 import "./styles/main.css";
 
-// Default configuration for Spilauersee (matching prototype)
-const DEFAULT_AVALANCHE_CONFIG: AvalancheConfig = {
-  id: "spilauersee",
-  name: "Spilauersee",
-  folder: "Spilauersee",
-  prefix: "spilauersee_Flowheight_",
-  suffix: "s.tif",
-  timeInterval: 2,
-  timeRange: [0, 66],
-  description: "Spilauersee avalanche simulation",
-};
-
 // UI Elements
 let playBtn: HTMLCalciteButtonElement | null;
 let resetBtn: HTMLCalciteButtonElement | null;
+let playAllBtn: HTMLCalciteActionElement | null;
 let timeSlider: HTMLCalciteSliderElement | null;
 let speedSelect: HTMLCalciteSelectElement | null;
 let smoothingSelect: HTMLCalciteSelectElement | null;
@@ -50,10 +35,12 @@ let progressBar: HTMLCalciteProgressElement | null;
 let progressText: HTMLElement | null;
 let loadingProgress: HTMLElement | null;
 let loadingOverlay: HTMLElement | null;
+let avalancheList: HTMLCalciteListElement | null;
+let avalancheNameEl: HTMLElement | null;
+let avalancheDescEl: HTMLElement | null;
 
 // Application state
-let simulation: AvalancheSimulation | null = null;
-let view: SceneView | null = null;
+const manager = getSimulationManager();
 
 /**
  * Update status display
@@ -83,6 +70,15 @@ function updateProgress(current: number, total: number): void {
 }
 
 /**
+ * Show loading progress
+ */
+function showLoadingProgress(): void {
+  if (loadingProgress) {
+    loadingProgress.style.display = "block";
+  }
+}
+
+/**
  * Hide loading overlay
  */
 function hideLoading(): void {
@@ -95,21 +91,29 @@ function hideLoading(): void {
 }
 
 /**
+ * Get the current active simulation
+ */
+function getSimulation() {
+  return manager.getActiveSimulation();
+}
+
+/**
  * Setup UI event listeners
  */
 function setupControls(): void {
   // Play/Pause button
   if (playBtn) {
     playBtn.addEventListener("click", () => {
-      if (!simulation) return;
-      simulation.togglePlay();
+      const sim = getSimulation();
+      if (!sim) return;
+      sim.togglePlay();
     });
   }
 
   // Reset button
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
-      simulation?.reset();
+      getSimulation()?.reset();
     });
   }
 
@@ -117,7 +121,7 @@ function setupControls(): void {
   if (speedSelect) {
     speedSelect.addEventListener("calciteSelectChange", () => {
       const speed = parseInt(speedSelect!.value, 10);
-      simulation?.setSpeed(speed);
+      getSimulation()?.setSpeed(speed);
     });
   }
 
@@ -125,7 +129,7 @@ function setupControls(): void {
   if (smoothingSelect) {
     smoothingSelect.addEventListener("calciteSelectChange", () => {
       const factor = parseInt(smoothingSelect!.value, 10);
-      simulation?.setSmoothing(factor);
+      getSimulation()?.setSmoothing(factor);
     });
   }
 
@@ -133,18 +137,24 @@ function setupControls(): void {
   if (flattenSelect) {
     flattenSelect.addEventListener("calciteSelectChange", () => {
       const passes = parseInt(flattenSelect!.value, 10);
-      simulation?.setFlattenPasses(passes);
+      getSimulation()?.setFlattenPasses(passes);
     });
   }
 
   // Time slider
   if (timeSlider) {
     timeSlider.addEventListener("calciteSliderInput", () => {
-      if (!simulation) return;
-      simulation.pause();
+      const sim = getSimulation();
+      if (!sim) return;
+      sim.pause();
       const time = timeSlider!.value as number;
-      simulation.seekToTime(time);
+      sim.seekToTime(time);
     });
+  }
+
+  // Play All button
+  if (playAllBtn) {
+    playAllBtn.addEventListener("click", handlePlayAll);
   }
 }
 
@@ -172,6 +182,165 @@ function onPlayStateChange(isPlaying: boolean): void {
 }
 
 /**
+ * Subscribe to simulation events
+ */
+function subscribeToSimulation(): void {
+  const sim = getSimulation();
+  if (!sim) return;
+
+  sim.on("frameChange", (event) => {
+    if (event.time !== undefined) {
+      onFrameChange(event.time);
+    }
+  });
+
+  sim.on("playStateChange", (event) => {
+    if (event.isPlaying !== undefined) {
+      onPlayStateChange(event.isPlaying);
+    }
+  });
+}
+
+/**
+ * Update slider for current avalanche config
+ */
+function updateSliderForConfig(config: AvalancheConfig): void {
+  if (timeSlider) {
+    const [min, max] = config.timeRange;
+    timeSlider.min = min;
+    timeSlider.max = max;
+    timeSlider.step = config.timeInterval;
+    timeSlider.value = min;
+  }
+}
+
+/**
+ * Update info panel with avalanche details
+ */
+function updateInfoPanel(config: AvalancheConfig): void {
+  if (avalancheNameEl) {
+    avalancheNameEl.textContent = config.name;
+  }
+  if (avalancheDescEl) {
+    avalancheDescEl.textContent = config.description || "Flow Height Visualization";
+  }
+}
+
+/**
+ * Populate the avalanche list
+ */
+function populateAvalancheList(configs: AvalancheConfig[]): void {
+  if (!avalancheList) return;
+
+  avalancheList.innerHTML = "";
+
+  configs.forEach((config) => {
+    const item = document.createElement("calcite-list-item");
+    item.label = config.name;
+    item.description = config.description || "";
+    item.value = config.id;
+    avalancheList!.appendChild(item);
+  });
+
+  // Handle selection
+  avalancheList.addEventListener("calciteListChange", async (event) => {
+    const selectedItems = (event.target as HTMLCalciteListElement).selectedItems;
+    if (selectedItems.length === 0) return;
+
+    const selectedId = (selectedItems[0] as HTMLCalciteListItemElement).value;
+    if (!selectedId) return;
+
+    await switchToAvalanche(selectedId);
+  });
+}
+
+/**
+ * Handle Play All button click
+ */
+async function handlePlayAll(): Promise<void> {
+  if (manager.isPlayAllMode()) {
+    // Stop all simulations
+    manager.stopAll();
+    updatePlayAllButton(false);
+    updateStatus("Ready - Press Play to animate", "ready");
+    updateInfoPanel(manager.getActiveConfig()!);
+  } else {
+    // Load and play all simulations
+    updateStatus("Loading all avalanches...");
+    showLoadingProgress();
+
+    try {
+      await manager.loadAllSimulations((loaded, total) => {
+        updateProgress(loaded, total);
+      });
+
+      hideLoading();
+      updateStatus("Playing all avalanches", "ready");
+      updateInfoPanel({
+        id: "all",
+        name: "All Avalanches",
+        description: "Playing all simulations simultaneously",
+        folder: "",
+        prefix: "",
+        suffix: "",
+        timeInterval: 1,
+        timeRange: [0, 0],
+      });
+
+      await manager.playAll();
+      updatePlayAllButton(true);
+    } catch (error) {
+      console.error("Failed to play all:", error);
+      updateStatus("Failed to load all avalanches", "error");
+    }
+  }
+}
+
+/**
+ * Update Play All button state
+ */
+function updatePlayAllButton(isPlaying: boolean): void {
+  if (playAllBtn) {
+    playAllBtn.icon = isPlaying ? "stop-f" : "play-all-f";
+    playAllBtn.text = isPlaying ? "Stop All" : "Play All";
+  }
+}
+
+/**
+ * Switch to a different avalanche
+ */
+async function switchToAvalanche(id: string): Promise<void> {
+  // Exit play all mode if active
+  if (manager.isPlayAllMode()) {
+    manager.stopAll();
+    updatePlayAllButton(false);
+  }
+
+  const config = manager.getConfigs().find((c) => c.id === id);
+  if (!config) return;
+
+  updateStatus(`Loading ${config.name}...`);
+  showLoadingProgress();
+
+  try {
+    await manager.switchToAvalanche(id, updateProgress);
+
+    // Subscribe to new simulation events
+    subscribeToSimulation();
+
+    // Update UI
+    updateSliderForConfig(config);
+    updateInfoPanel(config);
+    hideLoading();
+
+    updateStatus("Ready - Press Play to animate", "ready");
+  } catch (error) {
+    console.error("Failed to switch avalanche:", error);
+    updateStatus(`Failed to load ${config.name}`, "error");
+  }
+}
+
+/**
  * Initialize the application
  */
 async function init(): Promise<void> {
@@ -180,26 +349,20 @@ async function init(): Promise<void> {
   // Get UI elements
   playBtn = document.getElementById("play-btn") as HTMLCalciteButtonElement;
   resetBtn = document.getElementById("reset-btn") as HTMLCalciteButtonElement;
-  timeSlider = document.getElementById(
-    "time-slider"
-  ) as HTMLCalciteSliderElement;
-  speedSelect = document.getElementById(
-    "speed-select"
-  ) as HTMLCalciteSelectElement;
-  smoothingSelect = document.getElementById(
-    "smoothing-select"
-  ) as HTMLCalciteSelectElement;
-  flattenSelect = document.getElementById(
-    "flatten-select"
-  ) as HTMLCalciteSelectElement;
+  timeSlider = document.getElementById("time-slider") as HTMLCalciteSliderElement;
+  speedSelect = document.getElementById("speed-select") as HTMLCalciteSelectElement;
+  smoothingSelect = document.getElementById("smoothing-select") as HTMLCalciteSelectElement;
+  flattenSelect = document.getElementById("flatten-select") as HTMLCalciteSelectElement;
   currentTimeSpan = document.getElementById("current-time");
   statusEl = document.getElementById("status");
-  progressBar = document.getElementById(
-    "progress-bar"
-  ) as HTMLCalciteProgressElement;
+  progressBar = document.getElementById("progress-bar") as HTMLCalciteProgressElement;
   progressText = document.getElementById("progress-text");
   loadingProgress = document.getElementById("loading-progress");
   loadingOverlay = document.getElementById("loading-overlay");
+  avalancheList = document.getElementById("avalanche-list") as HTMLCalciteListElement;
+  avalancheNameEl = document.getElementById("avalanche-name");
+  avalancheDescEl = document.getElementById("avalanche-description");
+  playAllBtn = document.getElementById("play-all-btn") as HTMLCalciteActionElement;
 
   // Setup controls
   setupControls();
@@ -208,7 +371,7 @@ async function init(): Promise<void> {
   const elevationService = getElevationService();
   await elevationService.load();
 
-  // Create snow cover layer
+  // Create layers
   const snowCoverLayer = createSnowCoverLayer();
   const slopeLayer = createSlopesLayer();
 
@@ -223,7 +386,7 @@ async function init(): Promise<void> {
   });
 
   // Create SceneView
-  view = new SceneView({
+  const view = new SceneView({
     container: "viewDiv",
     map: map,
     environment: {
@@ -245,84 +408,33 @@ async function init(): Promise<void> {
 
   await view.when();
 
-  // Create simulation
-  simulation = new AvalancheSimulation(DEFAULT_AVALANCHE_CONFIG);
+  // Set view in simulation manager
+  manager.setView(view);
 
-  // Subscribe to events
-  simulation.on("frameChange", (event) => {
-    if (event.time !== undefined) {
-      onFrameChange(event.time);
-    }
-  });
+  // Load avalanche configurations
+  updateStatus("Loading avalanche configurations...");
+  const configs = await manager.loadConfigs();
 
-  simulation.on("playStateChange", (event) => {
-    if (event.isPlaying !== undefined) {
-      onPlayStateChange(event.isPlaying);
-    }
-  });
+  // Populate avalanche list
+  populateAvalancheList(configs);
 
-  // Initialize simulation
-  updateStatus("Preloading animation frames...");
-  await simulation.initialize(view, updateProgress);
-
-  // Configure slider based on time range
-  if (timeSlider) {
-    const [min, max] = DEFAULT_AVALANCHE_CONFIG.timeRange;
-    timeSlider.min = min;
-    timeSlider.max = max;
-    timeSlider.step = DEFAULT_AVALANCHE_CONFIG.timeInterval;
+  // Hide initial loading overlay
+  if (loadingOverlay) {
+    loadingOverlay.classList.add("hidden");
   }
 
-  // Hide loading
-  hideLoading();
+  // Auto-select first avalanche
+  if (configs.length > 0) {
+    // Set the first item as selected in the list
+    const firstItem = avalancheList?.querySelector("calcite-list-item");
+    if (firstItem) {
+      (firstItem as HTMLCalciteListItemElement).selected = true;
+    }
 
-  // Display first frame
-  simulation.displayFrame(0);
-
-  // Get extent and animate camera
-  const extent = simulation.getExtent();
-  if (extent) {
-    const centerX = (extent.xmin + extent.xmax) / 2;
-    const centerY = (extent.ymin + extent.ymax) / 2;
-    const extentWidth = extent.xmax - extent.xmin;
-    const extentHeight = extent.ymax - extent.ymin;
-    const diagonal = Math.sqrt(
-      extentWidth * extentWidth + extentHeight * extentHeight
-    );
-
-    // Set initial camera position
-    view.camera = new Camera({
-      position: new Point({
-        x: centerX - diagonal * 0.6,
-        y: centerY - diagonal * 0.6,
-        z: diagonal * 1.0,
-        spatialReference: extent.spatialReference,
-      }),
-      heading: 45,
-      tilt: 60,
-    });
-
-    // Animate to target view
-    await view.goTo(
-      {
-        target: new Extent({
-          xmin: extent.xmin,
-          ymin: extent.ymin,
-          xmax: extent.xmax,
-          ymax: extent.ymax,
-          spatialReference: extent.spatialReference,
-        }).expand(1.3),
-        heading: 320,
-        tilt: 65,
-      },
-      {
-        duration: CAMERA_ANIMATION_DURATION,
-        easing: "out-expo",
-      }
-    );
+    await switchToAvalanche(configs[0].id);
+  } else {
+    updateStatus("No avalanche configurations found", "error");
   }
-
-  updateStatus("Ready - Press Play to animate", "ready");
 }
 
 // Start the application

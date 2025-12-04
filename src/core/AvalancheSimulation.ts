@@ -356,6 +356,27 @@ export class AvalancheSimulation {
   }
 
   /**
+   * Hide all mesh graphics
+   */
+  hide(): void {
+    this.meshCache.forEach((graphic) => {
+      graphic.visible = false;
+    });
+  }
+
+  /**
+   * Show the current frame mesh graphic
+   */
+  show(): void {
+    if (this.currentFrameTime !== null) {
+      const graphic = this.meshCache.get(this.currentFrameTime);
+      if (graphic) {
+        graphic.visible = true;
+      }
+    }
+  }
+
+  /**
    * Clean up resources
    */
   dispose(): void {

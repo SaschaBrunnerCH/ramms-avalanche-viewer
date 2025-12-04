@@ -20,7 +20,29 @@
         ></calcite-navigation-logo>
       </calcite-navigation>
 
-      <!-- Right Panel - Info & Legend -->
+      <!-- Left Panel - Avalanche Selection -->
+      <calcite-shell-panel
+        slot="panel-start"
+        position="start"
+        display-mode="float"
+        width-scale="s"
+      >
+        <calcite-panel heading="Avalanches">
+          <calcite-action
+            slot="header-actions-end"
+            id="play-all-btn"
+            icon="play-all-f"
+            text="Play All"
+            text-enabled
+            scale="s"
+          ></calcite-action>
+          <calcite-list id="avalanche-list" selection-mode="single">
+            <!-- Populated dynamically -->
+          </calcite-list>
+        </calcite-panel>
+      </calcite-shell-panel>
+
+      <!-- Right Panel - Info & Status -->
       <calcite-shell-panel
         slot="panel-end"
         position="end"
@@ -30,12 +52,12 @@
         <calcite-panel heading="Simulation Info" closable>
           <calcite-block heading="Current Avalanche" expanded>
             <calcite-icon slot="icon" icon="initiative"></calcite-icon>
-            <p id="avalanche-name">Spilauersee</p>
+            <p id="avalanche-name">-</p>
             <p
               id="avalanche-description"
               style="font-size: 0.85rem; color: var(--calcite-color-text-3)"
             >
-              Flow Height Visualization
+              Select an avalanche to begin
             </p>
           </calcite-block>
 
