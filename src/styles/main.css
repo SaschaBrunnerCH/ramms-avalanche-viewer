@@ -155,6 +155,27 @@ calcite-slider {
   --calcite-slider-handle-size: 14px;
 }
 
+/* Layer Panel - bottom left */
+#layer-panel {
+  position: fixed;
+  bottom: 30px;
+  left: 8px;
+  z-index: 50;
+  min-width: 220px;
+  max-width: 280px;
+}
+
+#layer-panel calcite-panel {
+  --calcite-panel-header-action-padding: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+#layer-panel calcite-list-item {
+  --calcite-list-item-padding: 4px 8px;
+}
+
 /* Quote Banner - bottom right */
 #quote-banner {
   position: fixed;

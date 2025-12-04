@@ -153,9 +153,9 @@
             Speed
             <calcite-select id="speed-select" scale="s">
               <calcite-option value="2000">0.5x</calcite-option>
-              <calcite-option value="1000" selected>1x</calcite-option>
+              <calcite-option value="1000">1x</calcite-option>
               <calcite-option value="500">2x</calcite-option>
-              <calcite-option value="250">4x</calcite-option>
+              <calcite-option value="250" selected>4x</calcite-option>
             </calcite-select>
           </calcite-label>
 
@@ -163,9 +163,9 @@
             Grid
             <calcite-select id="smoothing-select" scale="s">
               <calcite-option value="1">1x</calcite-option>
-              <calcite-option value="2" selected>2x</calcite-option>
+              <calcite-option value="2">2x</calcite-option>
               <calcite-option value="3">3x</calcite-option>
-              <calcite-option value="4">4x</calcite-option>
+              <calcite-option value="4" selected>4x</calcite-option>
             </calcite-select>
           </calcite-label>
 
@@ -174,9 +174,9 @@
             <calcite-select id="flatten-select" scale="s">
               <calcite-option value="0">Off</calcite-option>
               <calcite-option value="2">Low</calcite-option>
-              <calcite-option value="5" selected>Medium</calcite-option>
+              <calcite-option value="5">Medium</calcite-option>
               <calcite-option value="10">High</calcite-option>
-              <calcite-option value="20">Very High</calcite-option>
+              <calcite-option value="20" selected>Very High</calcite-option>
             </calcite-select>
           </calcite-label>
         </div>
@@ -187,6 +187,53 @@
     <div id="loading-overlay" class="loading-overlay">
       <calcite-loader active scale="l"></calcite-loader>
       <p class="loading-text">Loading Avalanche Simulation...</p>
+    </div>
+
+    <!-- Layer List Panel - Bottom Left -->
+    <div id="layer-panel">
+      <calcite-panel heading="Layers" collapsible collapsed collapse-direction="bottom">
+        <calcite-list id="layer-list">
+          <calcite-list-item label="Snow Cover">
+            <calcite-icon slot="content-start" icon="layer"></calcite-icon>
+            <calcite-slider
+              slot="content-end"
+              id="snow-cover-opacity"
+              min="0"
+              max="100"
+              value="100"
+              step="5"
+              scale="s"
+              style="width: 100px;"
+            ></calcite-slider>
+          </calcite-list-item>
+          <calcite-list-item label="Slopes">
+            <calcite-icon slot="content-start" icon="layer"></calcite-icon>
+            <calcite-slider
+              slot="content-end"
+              id="slopes-opacity"
+              min="0"
+              max="100"
+              value="100"
+              step="5"
+              scale="s"
+              style="width: 100px;"
+            ></calcite-slider>
+          </calcite-list-item>
+          <calcite-list-item label="Release Zone">
+            <calcite-icon slot="content-start" icon="polygon"></calcite-icon>
+            <calcite-slider
+              slot="content-end"
+              id="release-zone-opacity"
+              min="0"
+              max="100"
+              value="100"
+              step="5"
+              scale="s"
+              style="width: 100px;"
+            ></calcite-slider>
+          </calcite-list-item>
+        </calcite-list>
+      </calcite-panel>
     </div>
 
     <!-- Quote Banner -->

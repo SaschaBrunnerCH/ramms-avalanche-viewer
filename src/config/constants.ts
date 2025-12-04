@@ -25,9 +25,9 @@ export const DEFAULT_TERRAIN_CONFIG: TerrainConfig = {
  * Default animation settings
  */
 export const DEFAULT_ANIMATION = {
-  playbackSpeed: 1000,    // ms per frame
-  smoothingFactor: 2,
-  flattenPasses: 5,
+  playbackSpeed: 250,     // ms per frame (4x speed)
+  smoothingFactor: 4,
+  flattenPasses: 20,
   loop: true
 };
 

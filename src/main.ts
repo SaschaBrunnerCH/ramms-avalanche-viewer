@@ -57,6 +57,13 @@ let demResolutionEl: HTMLElement | null;
 // Application state
 const manager = getSimulationManager();
 let releaseZoneLayer: GraphicsLayer | null = null;
+let snowCoverLayer: __esri.Layer | null = null;
+let slopesLayer: __esri.Layer | null = null;
+
+// Opacity slider elements
+let snowCoverOpacitySlider: HTMLCalciteSliderElement | null;
+let slopesOpacitySlider: HTMLCalciteSliderElement | null;
+let releaseZoneOpacitySlider: HTMLCalciteSliderElement | null;
 
 /**
  * Update status display
@@ -494,6 +501,38 @@ async function switchToAvalanche(id: string): Promise<void> {
 }
 
 /**
+ * Setup layer opacity sliders
+ */
+function setupOpacitySliders(): void {
+  // Snow Cover opacity
+  if (snowCoverOpacitySlider && snowCoverLayer) {
+    snowCoverOpacitySlider.addEventListener("calciteSliderInput", () => {
+      if (snowCoverLayer) {
+        snowCoverLayer.opacity = (snowCoverOpacitySlider!.value as number) / 100;
+      }
+    });
+  }
+
+  // Slopes opacity
+  if (slopesOpacitySlider && slopesLayer) {
+    slopesOpacitySlider.addEventListener("calciteSliderInput", () => {
+      if (slopesLayer) {
+        slopesLayer.opacity = (slopesOpacitySlider!.value as number) / 100;
+      }
+    });
+  }
+
+  // Release Zone opacity
+  if (releaseZoneOpacitySlider && releaseZoneLayer) {
+    releaseZoneOpacitySlider.addEventListener("calciteSliderInput", () => {
+      if (releaseZoneLayer) {
+        releaseZoneLayer.opacity = (releaseZoneOpacitySlider!.value as number) / 100;
+      }
+    });
+  }
+}
+
+/**
  * Handle scene view ready event
  */
 async function onSceneViewReady(view: SceneView): Promise<void> {
@@ -502,8 +541,8 @@ async function onSceneViewReady(view: SceneView): Promise<void> {
   await elevationService.load();
 
   // Create layers
-  const snowCoverLayer = createSnowCoverLayer();
-  const slopeLayer = createSlopesLayer();
+  snowCoverLayer = createSnowCoverLayer();
+  slopesLayer = createSlopesLayer();
 
   // Create release zone layer
   releaseZoneLayer = new GraphicsLayer({
@@ -516,8 +555,11 @@ async function onSceneViewReady(view: SceneView): Promise<void> {
   // Add elevation layer to ground and layers to map
   if (view.map) {
     view.map.ground.layers.add(elevationService.getLayer());
-    view.map.addMany([snowCoverLayer, slopeLayer, releaseZoneLayer]);
+    view.map.addMany([snowCoverLayer, slopesLayer, releaseZoneLayer]);
   }
+
+  // Setup opacity sliders
+  setupOpacitySliders();
 
   // Configure environment
   view.environment = {
@@ -590,6 +632,11 @@ function init(): void {
   releaseAreaEl = document.getElementById("release-area");
   demSourceEl = document.getElementById("dem-source");
   demResolutionEl = document.getElementById("dem-resolution");
+
+  // Opacity sliders
+  snowCoverOpacitySlider = document.getElementById("snow-cover-opacity") as HTMLCalciteSliderElement;
+  slopesOpacitySlider = document.getElementById("slopes-opacity") as HTMLCalciteSliderElement;
+  releaseZoneOpacitySlider = document.getElementById("release-zone-opacity") as HTMLCalciteSliderElement;
 
   // Setup controls
   setupControls();
