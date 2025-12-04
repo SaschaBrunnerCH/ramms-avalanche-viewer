@@ -39,7 +39,7 @@ export class SimulationManager {
   /**
    * Load avalanche configurations from JSON
    */
-  async loadConfigs(url: string = '/data/avalanches.json'): Promise<AvalancheConfig[]> {
+  async loadConfigs(url: string = `${import.meta.env.BASE_URL}data/avalanches.json`): Promise<AvalancheConfig[]> {
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to load avalanche configs: ${response.statusText}`);

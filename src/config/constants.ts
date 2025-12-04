@@ -68,14 +68,14 @@ export const ELEVATION_SERVICE_URL =
 export const WEB_MERCATOR_WKID = 3857;
 
 /**
- * Data folder path (relative to public)
+ * Data folder path (uses Vite's base URL for correct deployment path)
  */
-export const DATA_FOLDER = './data';
+export const DATA_FOLDER = `${import.meta.env.BASE_URL}data`;
 
 /**
  * Avalanche config file path
  */
-export const AVALANCHE_CONFIG_PATH = './data/avalanches.json';
+export const AVALANCHE_CONFIG_PATH = `${import.meta.env.BASE_URL}data/avalanches.json`;
 
 /**
  * Mesh material properties
