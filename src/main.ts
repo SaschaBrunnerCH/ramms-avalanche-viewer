@@ -31,7 +31,6 @@ import "./styles/main.css";
 // UI Elements
 let playBtn: HTMLCalciteButtonElement | null;
 let resetBtn: HTMLCalciteButtonElement | null;
-let playAllBtn: HTMLCalciteActionElement | null;
 let timeSlider: HTMLCalciteSliderElement | null;
 let speedSelect: HTMLCalciteSelectElement | null;
 let smoothingSelect: HTMLCalciteSelectElement | null;
@@ -158,11 +157,6 @@ function setupControls(): void {
       sim.seekToTime(time);
     });
   }
-
-  // Play All button
-  if (playAllBtn) {
-    playAllBtn.addEventListener("click", handlePlayAll);
-  }
 }
 
 /**
@@ -241,6 +235,14 @@ function populateAvalancheList(configs: AvalancheConfig[]): void {
 
   avalancheList.innerHTML = "";
 
+  // Add "All Avalanches" option first
+  const allItem = document.createElement("calcite-list-item");
+  allItem.label = "All Avalanches";
+  allItem.description = "Play all simulations simultaneously";
+  allItem.value = "all";
+  avalancheList.appendChild(allItem);
+
+  // Add individual avalanches
   configs.forEach((config) => {
     const item = document.createElement("calcite-list-item");
     item.label = config.name;
@@ -257,59 +259,43 @@ function populateAvalancheList(configs: AvalancheConfig[]): void {
     const selectedId = (selectedItems[0] as HTMLCalciteListItemElement).value;
     if (!selectedId) return;
 
-    await switchToAvalanche(selectedId);
+    if (selectedId === "all") {
+      await handlePlayAll();
+    } else {
+      await switchToAvalanche(selectedId);
+    }
   });
 }
 
 /**
- * Handle Play All button click
+ * Handle Play All selection
  */
 async function handlePlayAll(): Promise<void> {
-  if (manager.isPlayAllMode()) {
-    // Stop all simulations
-    manager.stopAll();
-    updatePlayAllButton(false);
-    updateStatus("Ready - Press Play to animate", "ready");
-    updateInfoPanel(manager.getActiveConfig()!);
-  } else {
-    // Load and play all simulations
-    updateStatus("Loading all avalanches...");
-    showLoadingProgress();
+  updateStatus("Loading all avalanches...");
+  showLoadingProgress();
 
-    try {
-      await manager.loadAllSimulations((loaded, total) => {
-        updateProgress(loaded, total);
-      });
+  try {
+    await manager.loadAllSimulations((loaded, total) => {
+      updateProgress(loaded, total);
+    });
 
-      hideLoading();
-      updateStatus("Playing all avalanches", "ready");
-      updateInfoPanel({
-        id: "all",
-        name: "All Avalanches",
-        description: "Playing all simulations simultaneously",
-        folder: "",
-        prefix: "",
-        suffix: "",
-        timeInterval: 1,
-        timeRange: [0, 0],
-      });
+    hideLoading();
+    updateStatus("Playing all avalanches", "ready");
+    updateInfoPanel({
+      id: "all",
+      name: "All Avalanches",
+      description: "Playing all simulations simultaneously",
+      folder: "",
+      prefix: "",
+      suffix: "",
+      timeInterval: 1,
+      timeRange: [0, 0],
+    });
 
-      await manager.playAll();
-      updatePlayAllButton(true);
-    } catch (error) {
-      console.error("Failed to play all:", error);
-      updateStatus("Failed to load all avalanches", "error");
-    }
-  }
-}
-
-/**
- * Update Play All button state
- */
-function updatePlayAllButton(isPlaying: boolean): void {
-  if (playAllBtn) {
-    playAllBtn.icon = isPlaying ? "stop-f" : "play-all-f";
-    playAllBtn.text = isPlaying ? "Stop All" : "Play All";
+    await manager.playAll();
+  } catch (error) {
+    console.error("Failed to play all:", error);
+    updateStatus("Failed to load all avalanches", "error");
   }
 }
 
@@ -320,7 +306,6 @@ async function switchToAvalanche(id: string): Promise<void> {
   // Exit play all mode if active
   if (manager.isPlayAllMode()) {
     manager.stopAll();
-    updatePlayAllButton(false);
   }
 
   const config = manager.getConfigs().find((c) => c.id === id);
@@ -396,12 +381,12 @@ async function onSceneViewReady(view: SceneView): Promise<void> {
     loadingOverlay.classList.add("hidden");
   }
 
-  // Auto-select first avalanche
+  // Auto-select first avalanche (skip "All Avalanches" which is first)
   if (configs.length > 0) {
-    // Set the first item as selected in the list
-    const firstItem = avalancheList?.querySelector("calcite-list-item");
-    if (firstItem) {
-      (firstItem as HTMLCalciteListItemElement).selected = true;
+    // Set the second item (first actual avalanche) as selected in the list
+    const items = avalancheList?.querySelectorAll("calcite-list-item");
+    if (items && items.length > 1) {
+      (items[1] as HTMLCalciteListItemElement).selected = true;
     }
 
     await switchToAvalanche(configs[0].id);
@@ -432,7 +417,6 @@ function init(): void {
   avalancheList = document.getElementById("avalanche-list") as HTMLCalciteListElement;
   avalancheNameEl = document.getElementById("avalanche-name");
   avalancheDescEl = document.getElementById("avalanche-description");
-  playAllBtn = document.getElementById("play-all-btn") as HTMLCalciteActionElement;
 
   // Setup controls
   setupControls();
