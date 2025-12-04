@@ -172,6 +172,13 @@ export class AvalancheSimulation {
   }
 
   /**
+   * Check if the simulation is currently playing
+   */
+  isCurrentlyPlaying(): boolean {
+    return this.state.isPlaying;
+  }
+
+  /**
    * Get current time in seconds
    */
   getCurrentTime(): number {

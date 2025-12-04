@@ -254,7 +254,7 @@ export class SimulationManager {
   }
 
   /**
-   * Stop all simulations
+   * Stop all simulations and exit play all mode
    */
   stopAll(): void {
     this.playAllMode = false;
@@ -276,6 +276,136 @@ export class SimulationManager {
    */
   isPlayAllMode(): boolean {
     return this.playAllMode;
+  }
+
+  /**
+   * Toggle play/pause for all simulations in play all mode
+   */
+  togglePlayAll(): void {
+    if (!this.playAllMode) return;
+
+    // Check if any simulation is playing
+    let anyPlaying = false;
+    this.simulations.forEach((sim) => {
+      if (sim.isCurrentlyPlaying()) {
+        anyPlaying = true;
+      }
+    });
+
+    // Toggle all simulations
+    this.simulations.forEach((sim) => {
+      if (anyPlaying) {
+        sim.pause();
+      } else {
+        sim.play();
+      }
+    });
+  }
+
+  /**
+   * Pause all simulations
+   */
+  pauseAll(): void {
+    this.simulations.forEach((sim) => {
+      sim.pause();
+    });
+  }
+
+  /**
+   * Reset all simulations to frame 0
+   */
+  resetAll(): void {
+    this.simulations.forEach((sim) => {
+      sim.reset();
+    });
+  }
+
+  /**
+   * Set playback speed for all simulations
+   */
+  setSpeedAll(speed: number): void {
+    this.simulations.forEach((sim) => {
+      sim.setSpeed(speed);
+    });
+  }
+
+  /**
+   * Set smoothing factor for all simulations
+   */
+  setSmoothingAll(factor: number): void {
+    this.simulations.forEach((sim) => {
+      sim.setSmoothing(factor);
+    });
+  }
+
+  /**
+   * Set flatten passes for all simulations
+   */
+  setFlattenPassesAll(passes: number): void {
+    this.simulations.forEach((sim) => {
+      sim.setFlattenPasses(passes);
+    });
+  }
+
+  /**
+   * Seek all simulations to a specific time
+   * Simulations that don't have frames at that time stay at their last frame
+   */
+  seekAllToTime(time: number): void {
+    this.simulations.forEach((sim) => {
+      sim.seekToTime(time);
+    });
+  }
+
+  /**
+   * Get the maximum time range across all simulations
+   */
+  getMaxTimeRange(): [number, number] {
+    let minTime = Infinity;
+    let maxTime = 0;
+
+    this.configs.forEach((config) => {
+      const [start, end] = config.timeRange;
+      if (start < minTime) minTime = start;
+      if (end > maxTime) maxTime = end;
+    });
+
+    return [minTime === Infinity ? 0 : minTime, maxTime];
+  }
+
+  /**
+   * Get the minimum time interval across all simulations
+   */
+  getMinTimeInterval(): number {
+    let minInterval = Infinity;
+
+    this.configs.forEach((config) => {
+      if (config.timeInterval < minInterval) {
+        minInterval = config.timeInterval;
+      }
+    });
+
+    return minInterval === Infinity ? 1 : minInterval;
+  }
+
+  /**
+   * Check if any simulation is currently playing
+   */
+  isAnyPlaying(): boolean {
+    let anyPlaying = false;
+    this.simulations.forEach((sim) => {
+      if (sim.isCurrentlyPlaying()) {
+        anyPlaying = true;
+      }
+    });
+    return anyPlaying;
+  }
+
+  /**
+   * Get all loaded simulations
+   */
+  getAllSimulations(): AvalancheSimulation[] {
+    return Array.from(this.simulations.values());
   }
 
   /**

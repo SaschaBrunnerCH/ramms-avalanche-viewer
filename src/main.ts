@@ -120,16 +120,27 @@ function setupControls(): void {
   // Play/Pause button
   if (playBtn) {
     playBtn.addEventListener("click", () => {
-      const sim = getSimulation();
-      if (!sim) return;
-      sim.togglePlay();
+      if (manager.isPlayAllMode()) {
+        manager.togglePlayAll();
+        // Update button state based on whether any simulation is playing
+        const isPlaying = manager.isAnyPlaying();
+        onPlayStateChange(isPlaying);
+      } else {
+        const sim = getSimulation();
+        if (!sim) return;
+        sim.togglePlay();
+      }
     });
   }
 
   // Reset button
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
-      getSimulation()?.reset();
+      if (manager.isPlayAllMode()) {
+        manager.resetAll();
+      } else {
+        getSimulation()?.reset();
+      }
     });
   }
 
@@ -137,7 +148,11 @@ function setupControls(): void {
   if (speedSelect) {
     speedSelect.addEventListener("calciteSelectChange", () => {
       const speed = parseInt(speedSelect!.value, 10);
-      getSimulation()?.setSpeed(speed);
+      if (manager.isPlayAllMode()) {
+        manager.setSpeedAll(speed);
+      } else {
+        getSimulation()?.setSpeed(speed);
+      }
     });
   }
 
@@ -145,7 +160,11 @@ function setupControls(): void {
   if (smoothingSelect) {
     smoothingSelect.addEventListener("calciteSelectChange", () => {
       const factor = parseInt(smoothingSelect!.value, 10);
-      getSimulation()?.setSmoothing(factor);
+      if (manager.isPlayAllMode()) {
+        manager.setSmoothingAll(factor);
+      } else {
+        getSimulation()?.setSmoothing(factor);
+      }
     });
   }
 
@@ -153,18 +172,29 @@ function setupControls(): void {
   if (flattenSelect) {
     flattenSelect.addEventListener("calciteSelectChange", () => {
       const passes = parseInt(flattenSelect!.value, 10);
-      getSimulation()?.setFlattenPasses(passes);
+      if (manager.isPlayAllMode()) {
+        manager.setFlattenPassesAll(passes);
+      } else {
+        getSimulation()?.setFlattenPasses(passes);
+      }
     });
   }
 
   // Time slider
   if (timeSlider) {
     timeSlider.addEventListener("calciteSliderInput", () => {
-      const sim = getSimulation();
-      if (!sim) return;
-      sim.pause();
       const time = timeSlider!.value as number;
-      sim.seekToTime(time);
+      if (manager.isPlayAllMode()) {
+        // Pause all and seek all to the same time
+        manager.pauseAll();
+        manager.seekAllToTime(time);
+        onPlayStateChange(false);
+      } else {
+        const sim = getSimulation();
+        if (!sim) return;
+        sim.pause();
+        sim.seekToTime(time);
+      }
     });
   }
 }
@@ -388,11 +418,43 @@ async function handlePlayAll(): Promise<void> {
       demResolutionEl.textContent = "-";
     }
 
+    // Set slider to max range across all simulations
+    if (timeSlider) {
+      const [min, max] = manager.getMaxTimeRange();
+      const step = manager.getMinTimeInterval();
+      timeSlider.min = min;
+      timeSlider.max = max;
+      timeSlider.step = step;
+      timeSlider.value = min;
+    }
+
+    // Subscribe to play state changes from all simulations
+    subscribeToAllSimulations();
+
     await manager.playAll();
+
+    // Update play button to show playing state
+    onPlayStateChange(true);
   } catch (error) {
     console.error("Failed to play all:", error);
     updateStatus("Failed to load all avalanches", "error");
   }
+}
+
+/**
+ * Subscribe to events from all simulations in play all mode
+ */
+function subscribeToAllSimulations(): void {
+  const simulations = manager.getAllSimulations();
+  simulations.forEach((sim) => {
+    sim.on("playStateChange", (event) => {
+      if (manager.isPlayAllMode() && event.isPlaying !== undefined) {
+        // Update button based on whether any simulation is playing
+        const isPlaying = manager.isAnyPlaying();
+        onPlayStateChange(isPlaying);
+      }
+    });
+  });
 }
 
 /**
@@ -420,6 +482,9 @@ async function switchToAvalanche(id: string): Promise<void> {
     updateSliderForConfig(config);
     updateInfoPanel(config);
     hideLoading();
+
+    // Reset play button state
+    onPlayStateChange(false);
 
     updateStatus("Ready - Press Play to animate", "ready");
   } catch (error) {
